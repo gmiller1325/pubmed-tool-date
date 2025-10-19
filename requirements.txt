@@ -1,1 +1,3 @@
-﻿fastapiuvicornrequestslxml
+Flask
+requests
+gunicorn
