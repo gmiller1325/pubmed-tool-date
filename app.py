@@ -1,18 +1,20 @@
+# app.py  (replace the whole file with this)
+
 from typing import List, Optional
 from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, AnyUrl
+from pydantic import BaseModel
 
-from pubmed_tool import search_pubmed  # your existing logic
+from pubmed_tool import search_pubmed  # your existing logic file
 
-# Force OpenAPI 3.0.x so Dify is happy
+# IMPORTANT: force OpenAPI 3.0.x (NOT 3.1)
 app = FastAPI(
     title="PubMed Search Tool",
     version="1.0.0",
-    openapi_version="3.0.3"
+    openapi_version="3.0.3"   # <-- This is what changes 3.1.0 to 3.0.3
 )
 
-# --- Pydantic response models so the schema is explicit ---
+# ----- Explicit response models so the 200 schema isn't empty -----
 
 class Article(BaseModel):
     pmid: Optional[str] = None
@@ -23,7 +25,7 @@ class Article(BaseModel):
     authors: List[str] = []
     doi: Optional[str] = None
     mesh_terms: List[str] = []
-    url: Optional[str] = None  # could use AnyUrl, but Optional[str] is lenient
+    url: Optional[str] = None
 
 class SearchResponse(BaseModel):
     query: str
@@ -46,7 +48,7 @@ def healthz():
     response_model=SearchResponse,
     summary="Search PubMed and return structured results",
     tags=["pubmed"],
-    operation_id="pubmed_search"  # stable ID helps some tooling
+    operation_id="pubmed_search"
 )
 def search(
     q: str = Query(..., description="PubMed query string"),
@@ -54,12 +56,8 @@ def search(
     mindate: Optional[str] = Query(None, description="YYYY or YYYY/MM/DD"),
     maxdate: Optional[str] = Query(None, description="YYYY or YYYY/MM/DD")
 ):
-    """
-    Calls PubMed (E-utilities) and returns structured results.
-    """
     try:
         result = search_pubmed(q, max_results=max_results, mindate=mindate, maxdate=maxdate)
-        # result is already a dict like {"query": ..., "count": ..., "results": [...]}
-        return result
+        return result   # already a dict with query/count/results
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
