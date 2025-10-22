@@ -1,20 +1,12 @@
-# app.py  (replace the whole file with this)
-
+# app.py
+import json
 from typing import List, Optional
 from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-
 from pubmed_tool import search_pubmed  # your existing logic file
 
-# IMPORTANT: force OpenAPI 3.0.x (NOT 3.1)
-app = FastAPI(
-    title="PubMed Search Tool",
-    version="1.0.0",
-    openapi_version="3.0.3"   # <-- This is what changes 3.1.0 to 3.0.3
-)
-
-# ----- Explicit response models so the 200 schema isn't empty -----
+app = FastAPI(title="PubMed Search Tool", version="1.0.0", openapi_version="3.0.3")
 
 class Article(BaseModel):
     pmid: Optional[str] = None
@@ -43,6 +35,8 @@ def root():
 def healthz():
     return {"status": "ok"}
 
+MAX_ABS = 1200  # keep responses compact; reduce 503 risk
+
 @app.get(
     "/search",
     response_model=SearchResponse,
@@ -52,12 +46,31 @@ def healthz():
 )
 def search(
     q: str = Query(..., description="PubMed query string"),
-    max_results: int = Query(25, ge=1, le=200),
+    max_results: int = Query(3, ge=1, le=200),                 # smaller default helps
     mindate: Optional[str] = Query(None, description="YYYY or YYYY/MM/DD"),
     maxdate: Optional[str] = Query(None, description="YYYY or YYYY/MM/DD")
 ):
     try:
         result = search_pubmed(q, max_results=max_results, mindate=mindate, maxdate=maxdate)
-        return result   # already a dict with query/count/results
+
+        # --- Guard 1: if someone accidentally returned a JSON string, parse it ---
+        if isinstance(result, str):
+            try:
+                result = json.loads(result)
+            except json.JSONDecodeError:
+                # If two JSON objects got concatenated as a string, keep only the first one
+                first_split = result.find("}{")
+                candidate = result[:first_split+1] if first_split != -1 else result
+                result = json.loads(candidate)
+
+        # --- Guard 2: trim abstracts to keep payload small (avoid 503 in LLM step) ---
+        if isinstance(result, dict) and "results" in result and isinstance(result["results"], list):
+            for art in result["results"]:
+                if isinstance(art, dict) and "abstract" in art and art["abstract"]:
+                    if len(art["abstract"]) > MAX_ABS:
+                        art["abstract"] = art["abstract"][:MAX_ABS] + "…"
+
+        # Validate & return as proper JSON object (never a quoted string)
+        return SearchResponse(**result)
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
