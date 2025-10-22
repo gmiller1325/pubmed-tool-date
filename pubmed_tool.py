@@ -8,11 +8,11 @@ NCBI_API_KEY = os.getenv("NCBI_API_KEY", "")
 BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 
 def _build_params(extra: dict) -> dict:
-    params = {"retmode": "json"}
-    if NCBI_API_KEY:
-        params["api_key"] = NCBI_API_KEY
-    params.update(extra)
-    return params
+    base_params = {"retmode": "json"}
+    if NCBI_API_KEY:
+        base_params["api_key"] = NCBI_API_KEY
+    base_params.update(extra)
+    return base_params
 
 def _rate_limit_sleep():
     # Gentle pacing so you don't hit PubMed rate limits.
