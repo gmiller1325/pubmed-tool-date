@@ -40,9 +40,9 @@ MAX_ABS = 1200  # keep responses compact; reduce 503 risk
 @app.get(
     "/search",
     response_model=SearchResponse,
-    summary="Search PubMed and return structured results",
+    summary="Search PubMed and return structured results (SORTED BY DATE)",
     tags=["pubmed"],
-    operation_id="pubmed_search"
+    operation_id="pubmed_search_recent"
 )
 def search(
     q: str = Query(..., description="PubMed query string"),
