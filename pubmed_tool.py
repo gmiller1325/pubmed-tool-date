@@ -8,7 +8,7 @@ NCBI_API_KEY = os.getenv("NCBI_API_KEY", "")
 BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 
 def _build_params(extra: dict) -> dict:
-    base_params = {"retmode": "json"}
+    base_params = {"retmode": "json"}
     if NCBI_API_KEY:
         base_params["api_key"] = NCBI_API_KEY
     base_params.update(extra)
