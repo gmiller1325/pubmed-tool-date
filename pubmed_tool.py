@@ -4,7 +4,6 @@ import requests
 from typing import List, Dict, Any, Optional
 from lxml import etree
 
-
 NCBI_API_KEY = os.getenv("NCBI_API_KEY", "")
 BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 
