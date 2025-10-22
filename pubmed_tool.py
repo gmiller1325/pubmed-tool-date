@@ -30,7 +30,7 @@ def esearch(query: str, max_results: int = 50,
         "db": "pubmed",
         "term": query,
         "retmax": max_results,
-        "sort": "pub+date",
+        "sort": "pub_date",
     })
     if mindate or maxdate:
         params["datetype"] = "pdat"
