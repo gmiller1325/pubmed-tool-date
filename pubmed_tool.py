@@ -31,7 +31,7 @@ def esearch(query: str, max_results: int = 50,
         "retmax": max_results,
     })
     if mindate or maxdate:
-        params["datetype"] = "pdat"
+        params["datetype"] = "PDAT"
         if mindate: params["mindate"] = mindate
         if maxdate: params["maxdate"] = maxdate
 
