@@ -25,15 +25,26 @@ def esearch(query: str, max_results: int = 50,
     mindate/maxdate: 'YYYY' or 'YYYY/MM/DD' (publication date window)
     """
     _rate_limit_sleep()
+    
+    # --- THIS IS THE NEW LOGIC ---
+    # Build the query term with the date filter directly embedded
+    search_term = query
+    if mindate and maxdate:
+        # Add the date range to the query string using PubMed's syntax
+        search_term = f"({query}) AND ({mindate}[pdat] : {maxdate}[pdat])"
+    
     params = _build_params({
         "db": "pubmed",
-        "term": query,
+        "term": search_term,
         "retmax": max_results,
     })
-    if mindate or maxdate:
-        params["datetype"] = "PDAT"
-        if mindate: params["mindate"] = mindate
-        if maxdate: params["maxdate"] = maxdate
+    
+    # We no longer need the old, flaky date parameters
+    # if mindate or maxdate:
+    #     params["datetype"] = "pdat" 
+    #     if mindate: params["mindate"] = mindate
+    #     if maxdate: params["maxdate"] = maxdate
+    # --- END OF NEW LOGIC ---
 
     r = requests.get(f"{BASE}/esearch.fcgi", params=params, timeout=30)
     r.raise_for_status()
